@@ -30,4 +30,41 @@ function someCallback(array, asyncPredicate, callback) {
   next();
 }
 
-module.exports = { someCallback };
+function somePromise(array, asyncPredicate) {
+  return new Promise((resolve, reject) => {
+    if (array.length === 0) return resolve(false);
+
+    let index = 0;
+    let finished = false;
+
+    function next() {
+      if (finished) return;
+      if (index >= array.length) {
+        finished = true;
+        return resolve(false);
+      }
+
+      const current = index++;
+
+      asyncPredicate(array[current])
+        .then((result) => {
+          if (finished) return;
+          if (result) {
+            finished = true;
+            resolve(true);
+          } else {
+            next();
+          }
+        })
+        .catch((err) => {
+          if (finished) return;
+          finished = true;
+          reject(err);
+        });
+    }
+
+    next();
+  });
+}
+
+module.exports = { someCallback, somePromise };
